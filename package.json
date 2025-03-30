@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "deploy": "gh-pages -d dist",
+    "deploy": "gh-pages -d dist --cname backsplash.damus.ca",
     "docker:build": "docker build -t backsplash:v1 .",
     "docker:start": "docker run -p 3000:80 backsplash:v1",
     "lint": "eslint .",

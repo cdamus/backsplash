@@ -112,9 +112,30 @@ export default function Settings() {
     }
   };
 
+  // Don't let a click on the popover's backdrop dismiss the popover if that click is on the settings button
+  const onClickSettingsButton = (e: React.MouseEvent) => {
+    const el = document.getElementById('settings-button');
+    const clientRect = el?.getBoundingClientRect();
+    if (
+      clientRect &&
+      clientRect.left <= e.clientX &&
+      clientRect.right >= e.clientX &&
+      clientRect.top <= e.clientY &&
+      clientRect.bottom >= e.clientY
+    ) {
+      e.stopPropagation();
+    }
+  };
+
   return (
     <>
-      <Paper elevation={2} className="settings" onMouseEnter={openSettingsPopover} onClick={openSettingsPopover}>
+      <Paper
+        elevation={2}
+        id="settings-button"
+        className="settings"
+        onMouseEnter={openSettingsPopover}
+        onClick={openSettingsPopover}
+      >
         <TuneOutlinedIcon className="settings-icon" />
       </Paper>
       <Popover
@@ -124,6 +145,11 @@ export default function Settings() {
         onClose={closeSettingsPopover}
         anchorEl={popoverAnchor}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        slotProps={{
+          backdrop: {
+            onClickCapture: onClickSettingsButton,
+          },
+        }}
       >
         <Paper className="controls" elevation={2}>
           <Grid container spacing={4} columns={4}>

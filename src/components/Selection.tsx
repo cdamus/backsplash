@@ -21,13 +21,6 @@ import { Tile } from '../model/tile-generator';
 import { assertExists } from '../utils/type-utils';
 import { spread } from 'lodash';
 
-export type Selection = {
-  startRow: number;
-  startColumn: number;
-  endRow: number;
-  endColumn: number;
-};
-
 export type Hit = {
   x: number;
   y: number;

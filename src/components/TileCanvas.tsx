@@ -59,6 +59,7 @@ export default function TileCanvas({
   const selectionDashOffsetRef = useRef(0);
   const selectionRef = useRef<TileSelection | null>(null);
   const selectionAnimationRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const supportsSelection = onTileSelection !== undefined;
 
   useEffect(() => {
     if (typeof forwardedRef === 'function') {
@@ -100,6 +101,11 @@ export default function TileCanvas({
           ctx.scale(scaleFactor, scaleFactor);
         }
       }
+
+      if (supportsSelection) {
+        // Make space for the selection rubber band at the edges
+        ctx.translate(basisPx / 2, basisPx / 2);
+      }
     }
 
     function paintHoles(ctx: CanvasRenderingContext2D) {
@@ -128,10 +134,19 @@ export default function TileCanvas({
       ctx.restore();
     }
 
+    function blankCanvas(ctx: CanvasRenderingContext2D) {
+      if (supportsSelection) {
+        ctx.clearRect(-basisPx / 2, -basisPx / 2, ctx.canvas.width, ctx.canvas.height);
+      } else {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      }
+    }
+
     // We either paint text or paint colours
     if (tileText) {
       paintRef.current = () => {
         setupTransform(ctx);
+        blankCanvas(ctx);
 
         ctx.font = `normal ${basisPx}px monospace`;
         ctx.fillStyle = 'black';
@@ -161,6 +176,7 @@ export default function TileCanvas({
     } else {
       paintRef.current = (selection: TileSelection | null) => {
         setupTransform(ctx);
+        blankCanvas(ctx);
 
         const colourMap = model.colourModel.reduce((map, colour) => {
           map[colour.name] = colour.hexcode;
@@ -207,6 +223,7 @@ export default function TileCanvas({
     quadtree,
     selectionDashOffsetRef,
     selectionAnimationRef,
+    supportsSelection,
   ]);
 
   function onSelection(selection: TileSelection | null) {
@@ -261,6 +278,14 @@ export default function TileCanvas({
     canvasScalingProps = {
       width: canvasSize.width,
       height: canvasSize.height,
+    };
+  }
+
+  if (supportsSelection) {
+    // Make space for the selection rubber band at the edges
+    canvasScalingProps = {
+      width: canvasScalingProps.width + basisPx,
+      height: canvasScalingProps.height + basisPx,
     };
   }
 

@@ -114,19 +114,19 @@ export class TileRect implements Iterable<number> {
 
   intersect(other: TileRect) {
     const left =
-      other.contains(this.leftMiddle) && other.contains(this.topMiddle) && other.contains(this.bottomMiddle)
+      other.contains(this.leftMiddle) && other.top <= this.top && other.bottom >= this.bottom
         ? Math.max(this.left, other.right)
         : this.left;
     const top =
-      other.contains(this.topMiddle) && other.contains(this.leftMiddle) && other.contains(this.rightMiddle)
+      other.contains(this.topMiddle) && other.left <= this.left && other.right >= this.right
         ? Math.max(this.top, other.bottom)
         : this.top;
     const right =
-      other.contains(this.rightMiddle) && other.contains(this.topMiddle) && other.contains(this.bottomMiddle)
+      other.contains(this.rightMiddle) && other.top <= this.top && other.bottom >= this.bottom
         ? Math.min(this.right, other.left)
         : this.right;
     const bottom =
-      other.contains(this.bottomMiddle) && other.contains(this.leftMiddle) && other.contains(this.rightMiddle)
+      other.contains(this.bottomMiddle) && other.left <= this.left && other.right >= this.right
         ? Math.min(this.bottom, other.top)
         : this.bottom;
 

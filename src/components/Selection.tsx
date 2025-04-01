@@ -15,7 +15,7 @@
  *****************************************************************************/
 
 import { Box, QuadTree } from 'js-quadtree';
-import { RefObject, useEffect } from 'react';
+import { RefObject, useCallback, useEffect, useState } from 'react';
 import { TileSize } from '../model/geometry';
 import { Tile } from '../model/tile-generator';
 import { assertExists } from '../utils/type-utils';
@@ -56,12 +56,37 @@ export default function TileSelectionManager({
   onSelectionEnd,
   onAltClick,
 }: TileSelectionManagerProps) {
+  const [selection, setSelection] = useState<TileSelection | null>(null);
+
+  const updateSelection = useCallback(
+    (anchor: Hit, head: Hit) => {
+      if (selection === null || selection.anchor !== anchor || selection.head !== head) {
+        const newSelection = { anchor, head };
+        setSelection(newSelection);
+        onSelection?.(newSelection);
+      }
+    },
+    [selection, onSelection]
+  );
+
+  const clearSelection = useCallback(() => {
+    if (selection !== null) {
+      setSelection(null);
+      onSelection?.(null);
+    }
+  }, [selection, onSelection]);
+
+  const endSelection = useCallback(
+    (finalSelection: TileSelection | null) => {
+      onSelectionEnd?.(finalSelection);
+      setSelection(null);
+    },
+    [onSelectionEnd]
+  );
+
   useEffect(() => {
     const canvas = canvasRef.current;
     assertExists(canvas, 'canvas');
-
-    let anchor: Hit | undefined;
-    let head: Hit | undefined;
 
     const canvasBounds = canvas.getBoundingClientRect();
 
@@ -83,44 +108,30 @@ export default function TileSelectionManager({
           }
           const hits = store.query(search(e));
           if (hits.length > 0) {
-            anchor = hits[0];
-            head = hits[0];
-            onSelection({ anchor, head });
+            updateSelection(hits[0], hits[0]);
           } else {
-            anchor = undefined;
-            head = undefined;
-            onSelection(null);
+            clearSelection();
           }
         },
         mousemove(e: MouseEvent) {
-          if (!anchor || !head || e.altKey) {
+          if (!selection || e.altKey) {
             return;
           }
           const hits = store.query(search(e));
-          if (hits.length > 0 && anchor) {
-            head = hits[0];
-            onSelection({ anchor, head });
+          if (hits.length > 0) {
+            updateSelection(selection.anchor, hits[0]);
           }
         },
         mouseup(e: MouseEvent) {
           if (e.altKey) {
             return;
           }
-          if (anchor && head) {
-            onSelectionEnd({ anchor, head });
-          } else {
-            onSelectionEnd(null);
-          }
-          anchor = undefined;
-          head = undefined;
+          endSelection(selection);
         },
         keydown(e: KeyboardEvent) {
-          if (anchor && head && e.key === 'Escape') {
+          if (selection && e.key === 'Escape') {
             // Cancel selection
-            anchor = undefined;
-            head = undefined;
-            onSelection(null);
-            onSelectionEnd(null);
+            endSelection(null);
           }
         },
       };
@@ -155,7 +166,18 @@ export default function TileSelectionManager({
         Object.entries(gestureListeners).forEach(spread(canvas.removeEventListener.bind(canvas)));
       }
     };
-  }, [canvasRef, store, onSelection, onSelectionEnd, onAltClick, tileSize]);
+  }, [
+    canvasRef,
+    store,
+    onSelection,
+    onSelectionEnd,
+    onAltClick,
+    tileSize,
+    clearSelection,
+    endSelection,
+    selection,
+    updateSelection,
+  ]);
 
   return null;
 }

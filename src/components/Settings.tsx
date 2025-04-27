@@ -60,7 +60,7 @@ export default function Settings() {
     <P extends keyof TileParametersModel, E extends Event | React.ChangeEvent, T = unknown>(
       param: P,
       prop = 'value',
-      transform = (value: T) => value as TileParametersModel[P]
+      transform = (value: T) => value as TileParametersModel[P],
     ) =>
     (e: E) => {
       if (hasProperty(e.target, prop)) {
@@ -77,7 +77,7 @@ export default function Settings() {
       const anchor = e.currentTarget?.querySelector<HTMLElement>('.MuiSvgIcon-root') ?? e.currentTarget;
       setPopoverAnchor(anchor);
     },
-    [setPopoverAnchor]
+    [setPopoverAnchor],
   );
 
   const closeSettingsPopover = useCallback(() => setPopoverAnchor(null), [setPopoverAnchor]);
@@ -86,7 +86,7 @@ export default function Settings() {
     (state: TileParametersModel) => {
       dispatch({ type: 'load', state });
     },
-    [dispatch]
+    [dispatch],
   );
 
   const uploadFile = useCallback(
@@ -101,7 +101,7 @@ export default function Settings() {
           .catch(showBoundary);
       }
     },
-    [loadState, showBoundary]
+    [loadState, showBoundary],
   );
 
   const onDragging = (dragging: boolean): void => {
@@ -384,13 +384,13 @@ function FormSlider_({ id, label, onDragging, ...props }: FormSliderProps) {
     (classList) => {
       onDragging?.(!!classList && classList.search(/\bMuiSlider-dragging\b/) >= 0);
     },
-    [onDragging]
+    [onDragging],
   );
 
   return (
     <FormControl margin="none" variant="outlined" fullWidth>
       <FormLabel htmlFor={id}>{label}</FormLabel>
-      <Slider ref={ref} id={id} {...props} />
+      <Slider {...props} id={id} ref={ref} />
     </FormControl>
   );
 }
@@ -402,6 +402,6 @@ type FormSwitchProps = {
 } & SwitchProps;
 
 function FormSwitch_({ id, label, ...props }: FormSwitchProps) {
-  return <FormControlLabel control={<Switch id={id} {...props} />} label={label} />;
+  return <FormControlLabel control={<Switch {...props} id={id} />} label={label} />;
 }
 const FormSwitch = withTooltip(FormSwitch_, true);

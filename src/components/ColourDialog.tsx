@@ -20,6 +20,7 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CancelIcon from '@mui/icons-material/Cancel';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxOutlineIcon from '@mui/icons-material/CheckBoxOutlined';
+import CommitIcon from '@mui/icons-material/CheckCircle';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import StarIcon from '@mui/icons-material/Star';
@@ -27,7 +28,7 @@ import StarOutlineIcon from '@mui/icons-material/StarOutline';
 import Divider from '@mui/material/Divider';
 import _IconButton from '@mui/material/IconButton';
 import _TextField from '@mui/material/TextField';
-import { use, useRef, useState } from 'react';
+import { use, useCallback, useEffect, useRef, useState } from 'react';
 import { TileModelContext } from '../model/backsplash-model';
 import { ColourAction, colourPaletteReducer } from '../model/colour-model';
 import { DialogApi, useDialogApi } from '../utils/dialog-utils';
@@ -53,32 +54,54 @@ export default function ColourDialog({ api, onClose }: ColourDialogProps) {
   const [newColourName, setNewColourName] = useState('');
   const [newColourHexCode, setNewColourHexCode] = useState('#000000');
   const newColourNameRef = useRef<HTMLInputElement | null>(null);
+  const newColourInputRef = useRef<HTMLInputElement | null>(null);
 
   const dialogApi = useDialogApi(api, null);
 
   const colourModel = state.colourModel;
-  const dispatchColour = (action: ColourAction) =>
-    dispatch({
-      type: 'set-colour-palette',
-      palette: colourPaletteReducer({ grout: state.grout, colourModel: state.colourModel }, action),
-    });
+  const dispatchColour = useCallback(
+    (action: ColourAction) =>
+      dispatch({
+        type: 'set-colour-palette',
+        palette: colourPaletteReducer({ grout: state.grout, colourModel: state.colourModel }, action),
+      }),
+    [dispatch, state.colourModel, state.grout],
+  );
 
-  function submitNewColour() {
-    const name = newColourName.replace(/\s/g, '');
-    const code = newColourCode.replace(/\s/g, '');
-    if (name && code && !codeError) {
-      const colour = {
-        name,
-        hexcode: newColourHexCode,
-        code,
-        enabled: true,
-        weight: 5,
-        favourite: false,
-      } as const;
-      dispatchColour({ type: 'add-colour', colour });
-      setAddMode(false);
+  const submitNewColour = useCallback(
+    function () {
+      const name = newColourName.replace(/\s/g, '');
+      const code = newColourCode.replace(/\s/g, '');
+      if (name && code && !codeError) {
+        const colour = {
+          name,
+          hexcode: newColourHexCode,
+          code,
+          enabled: true,
+          weight: 5,
+          favourite: false,
+        } as const;
+        dispatchColour({ type: 'add-colour', colour });
+        setAddMode(false);
+      }
+    },
+    [newColourName, newColourCode, codeError, newColourHexCode, dispatchColour],
+  );
+
+  useEffect(() => {
+    if (addMode && newColourInputRef.current) {
+      const newColourInput = newColourInputRef.current;
+      const enterKey = (e: KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === 'Return') {
+          e.preventDefault();
+          e.stopPropagation();
+          submitNewColour();
+        }
+      };
+      newColourInput.addEventListener('keydown', enterKey);
+      return () => newColourInput.removeEventListener('keydown', enterKey);
     }
-  }
+  }, [addMode, submitNewColour]);
 
   function dispatcher<A extends ColourAction>(action: A['type'], index: number, args: Partial<Omit<A, 'type'>> = {}) {
     const colourName = colourModel[index].name;
@@ -88,7 +111,7 @@ export default function ColourDialog({ api, onClose }: ColourDialogProps) {
   function dynamicDispatcher<A extends ColourAction, E>(
     action: A['type'],
     index: number,
-    argsFunc: (e: E) => Partial<Omit<A, 'type'>>
+    argsFunc: (e: E) => Partial<Omit<A, 'type'>>,
   ) {
     const colourName = colourModel[index].name;
     return (e: E) => dispatchColour({ type: action, colourName, ...argsFunc(e) } as A);
@@ -264,6 +287,7 @@ export default function ColourDialog({ api, onClose }: ColourDialogProps) {
                 />
               </form>
               <ColorInput
+                ref={newColourInputRef}
                 className="swatch"
                 size="xs"
                 format="hex"
@@ -273,6 +297,13 @@ export default function ColourDialog({ api, onClose }: ColourDialogProps) {
                 onChange={setNewColourHexCode}
                 defaultValue="#000000"
               />
+              <IconButton
+                size="small"
+                onClick={() => submitNewColour()}
+                tooltip="Commit this new tile colour configuration."
+              >
+                <CommitIcon />
+              </IconButton>
               <IconButton
                 size="small"
                 onClick={() => setAddMode(false)}
